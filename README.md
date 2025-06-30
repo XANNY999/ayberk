@@ -37,7 +37,7 @@ npm install
 `.env.local` dosyasını düzenleyin:
 ```env
 # Claude.gg API Configuration
-CLAUDE_API_KEY=sk-2d8854bdf20549ff9a544e0b141c54a8
+CLAUDE_API_KEY=sk-
 CLAUDE_API_URL=https://api.claude.gg/v1/chat/completions
 
 # Database Configuration (Neon PostgreSQL)

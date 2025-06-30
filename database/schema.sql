@@ -75,7 +75,7 @@ INSERT INTO scooter_models (brand, model, estimated_service_time, common_issues)
 
 -- Insert default admin user (password: admin)
 INSERT INTO admin_users (username, password_hash) VALUES
-('admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+('admin', 'admin');
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
