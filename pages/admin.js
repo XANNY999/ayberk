@@ -58,17 +58,34 @@ export default function Admin() {
       const token = localStorage.getItem('admin_token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [statsRes, messagesRes, appointmentsRes] = await Promise.all([
-        axios.get('/api/admin/stats', { headers }),
-        axios.get('/api/admin/messages', { headers }),
-        axios.get('/api/admin/appointments', { headers })
-      ]);
+      // Try to load data, but don't logout on database errors
+      try {
+        const statsRes = await axios.get('/api/admin/stats', { headers });
+        setStats(statsRes.data);
+      } catch (error) {
+        console.log('Stats API error:', error);
+        setStats({ totalMessages: 0, pendingAppointments: 0, todayMessages: 0 });
+      }
 
-      setStats(statsRes.data);
-      setChatMessages(messagesRes.data);
-      setAppointments(appointmentsRes.data);
+      try {
+        const messagesRes = await axios.get('/api/admin/messages', { headers });
+        setChatMessages(messagesRes.data);
+      } catch (error) {
+        console.log('Messages API error:', error);
+        setChatMessages([]);
+      }
+
+      try {
+        const appointmentsRes = await axios.get('/api/admin/appointments', { headers });
+        setAppointments(appointmentsRes.data);
+      } catch (error) {
+        console.log('Appointments API error:', error);
+        setAppointments([]);
+      }
+
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      // Only logout on authentication errors, not database errors
       if (error.response?.status === 401) {
         handleLogout();
       }
