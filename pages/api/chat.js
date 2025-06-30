@@ -1,4 +1,10 @@
 import { getChatResponse, extractAppointmentInfo, isAppointmentRequest } from '../../lib/claude';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,8 +24,23 @@ export default async function handler(req, res) {
       { role: 'user', content: message }
     ], sessionId);
 
-    // TODO: Save chat message to database when schema is ready
-    console.log('Chat message:', { sessionId, message, botResponse });
+    // Save chat message to database
+    try {
+      await pool.query(
+        'INSERT INTO chat_messages (session_id, user_message, bot_response, user_ip, user_agent) VALUES ($1, $2, $3, $4, $5)',
+        [
+          sessionId,
+          message,
+          botResponse,
+          req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown',
+          req.headers['user-agent'] || 'unknown'
+        ]
+      );
+      console.log('Chat message saved to database');
+    } catch (dbError) {
+      console.error('Database save error:', dbError);
+      // Continue even if database save fails
+    }
 
     // Check if this is an appointment request and extract info
     let appointmentInfo = null;

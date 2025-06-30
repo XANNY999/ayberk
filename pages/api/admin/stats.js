@@ -1,4 +1,10 @@
 import jwt from 'jsonwebtoken';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
 function verifyToken(req) {
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -22,11 +28,24 @@ export default async function handler(req, res) {
     // Verify admin token
     verifyToken(req);
 
-    // TODO: Get real statistics from database when schema is ready
+    // Get statistics from database
+    const totalMessagesResult = await pool.query(
+      'SELECT COUNT(*) as count FROM chat_messages'
+    );
+
+    const todayMessagesResult = await pool.query(
+      'SELECT COUNT(*) as count FROM chat_messages WHERE DATE(created_at) = CURRENT_DATE'
+    );
+
+    const pendingAppointmentsResult = await pool.query(
+      'SELECT COUNT(*) as count FROM appointments WHERE status = $1',
+      ['pending']
+    );
+
     const stats = {
-      totalMessages: 0,
-      todayMessages: 0,
-      pendingAppointments: 0
+      totalMessages: parseInt(totalMessagesResult.rows[0]?.count || 0),
+      todayMessages: parseInt(todayMessagesResult.rows[0]?.count || 0),
+      pendingAppointments: parseInt(pendingAppointmentsResult.rows[0]?.count || 0)
     };
 
     res.status(200).json(stats);

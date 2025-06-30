@@ -1,4 +1,10 @@
 import jwt from 'jsonwebtoken';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
 function verifyToken(req) {
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -19,12 +25,53 @@ export default async function handler(req, res) {
     verifyToken(req);
 
     if (req.method === 'GET') {
-      // TODO: Get real appointments from database when schema is ready
-      res.status(200).json([]);
+      // Get all appointments
+      const result = await pool.query(
+        `SELECT id, customer_name, customer_phone, customer_email, 
+                scooter_brand, scooter_model, issue_description, 
+                preferred_date, preferred_time, estimated_duration, 
+                status, workbench_number, notes, created_at, updated_at
+         FROM appointments 
+         ORDER BY created_at DESC`
+      );
+
+      res.status(200).json(result.rows);
 
     } else if (req.method === 'POST') {
-      // TODO: Create appointment in database when schema is ready
-      res.status(201).json({ message: 'Appointment created' });
+      // Create new appointment
+      const {
+        customer_name,
+        customer_phone,
+        customer_email,
+        scooter_brand,
+        scooter_model,
+        issue_description,
+        preferred_date,
+        preferred_time,
+        estimated_duration
+      } = req.body;
+
+      const result = await pool.query(
+        `INSERT INTO appointments 
+         (customer_name, customer_phone, customer_email, scooter_brand, 
+          scooter_model, issue_description, preferred_date, preferred_time, 
+          estimated_duration) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+         RETURNING *`,
+        [
+          customer_name,
+          customer_phone,
+          customer_email,
+          scooter_brand,
+          scooter_model,
+          issue_description,
+          preferred_date,
+          preferred_time,
+          estimated_duration
+        ]
+      );
+
+      res.status(201).json(result.rows[0]);
 
     } else {
       res.status(405).json({ error: 'Method not allowed' });
