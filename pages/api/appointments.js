@@ -1,5 +1,3 @@
-import { query } from '../../lib/database';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -22,46 +20,37 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Get estimated service time based on scooter model
-    let estimated_duration = 60; // default 60 minutes
-    
-    try {
-      const scooterResult = await query(
-        'SELECT estimated_service_time FROM scooter_models WHERE LOWER(brand) = LOWER($1) AND LOWER(model) LIKE LOWER($2)',
-        [scooter_brand, `%${scooter_model}%`]
-      );
-      
-      if (scooterResult.rows.length > 0) {
-        estimated_duration = scooterResult.rows[0].estimated_service_time;
-      }
-    } catch (dbError) {
-      console.log('Could not fetch scooter model info, using default duration');
-    }
+    // TODO: Save to database when schema is ready
+    console.log('Appointment request:', {
+      customer_name,
+      customer_phone,
+      customer_email,
+      scooter_brand,
+      scooter_model,
+      issue_description,
+      preferred_date,
+      preferred_time
+    });
 
-    // Create appointment
-    const result = await query(
-      `INSERT INTO appointments 
-       (customer_name, customer_phone, customer_email, scooter_brand, 
-        scooter_model, issue_description, preferred_date, preferred_time, 
-        estimated_duration, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending') 
-       RETURNING *`,
-      [
-        customer_name,
-        customer_phone,
-        customer_email || null,
-        scooter_brand,
-        scooter_model,
-        issue_description,
-        preferred_date,
-        preferred_time,
-        estimated_duration
-      ]
-    );
+    // Mock appointment response
+    const mockAppointment = {
+      id: Date.now(),
+      customer_name,
+      customer_phone,
+      customer_email,
+      scooter_brand,
+      scooter_model,
+      issue_description,
+      preferred_date,
+      preferred_time,
+      estimated_duration: 60,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
 
     res.status(201).json({
       success: true,
-      appointment: result.rows[0],
+      appointment: mockAppointment,
       message: 'Randevunuz başarıyla oluşturuldu. Admin onayından sonra size bilgi verilecektir.'
     });
 

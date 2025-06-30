@@ -1,5 +1,4 @@
 import { getChatResponse, extractAppointmentInfo, isAppointmentRequest } from '../../lib/claude';
-import { query } from '../../lib/database';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -19,22 +18,8 @@ export default async function handler(req, res) {
       { role: 'user', content: message }
     ], sessionId);
 
-    // Save chat message to database
-    try {
-      await query(
-        'INSERT INTO chat_messages (session_id, user_message, bot_response, user_ip, user_agent) VALUES ($1, $2, $3, $4, $5)',
-        [
-          sessionId,
-          message,
-          botResponse,
-          req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown',
-          req.headers['user-agent'] || 'unknown'
-        ]
-      );
-    } catch (dbError) {
-      console.error('Database save error:', dbError);
-      // Continue even if database save fails
-    }
+    // TODO: Save chat message to database when schema is ready
+    console.log('Chat message:', { sessionId, message, botResponse });
 
     // Check if this is an appointment request and extract info
     let appointmentInfo = null;
