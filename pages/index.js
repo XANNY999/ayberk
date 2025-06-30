@@ -60,6 +60,32 @@ export default function Home() {
       };
 
       setMessages(prev => [...prev, botMessage]);
+
+      // Check if appointment info is provided and create appointment
+      if (response.data.appointmentInfo) {
+        try {
+          const appointmentResponse = await axios.post('/api/appointments', response.data.appointmentInfo);
+          console.log('Appointment created:', appointmentResponse.data);
+          
+          // Add success message
+          const successMessage = {
+            type: 'bot',
+            content: '✅ Randevunuz başarıyla oluşturuldu! Admin onayından sonra size bilgi verilecektir.',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, successMessage]);
+        } catch (appointmentError) {
+          console.error('Appointment creation error:', appointmentError);
+          
+          // Add error message
+          const errorMessage = {
+            type: 'bot',
+            content: '❌ Randevu oluşturulurken bir hata oluştu. Lütfen tekrar deneyin veya telefon ile iletişime geçin.',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, errorMessage]);
+        }
+      }
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage = {
